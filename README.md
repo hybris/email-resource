@@ -31,10 +31,9 @@ resources:
       username: a-user
       password: my-password
     from: build-system@example.com
-    to: [ "dev-team@example.com", "product@example.net" ]
 ```
-Note that `to` is an array, and that `port` is a string.
-If you're using `fly configure` with the `--load-vars-from` (`-l`) substitutions, every `{{ variable }}` 
+Note that `port` is a string.
+If you're using `fly configure` with the `--load-vars-from` (`-l`) substitutions, every `{{ variable }}`
 [automatically gets converted to a string](http://concourse.ci/fly-cli.html).
 But for literals you need to surround it with quotes.
 
@@ -50,11 +49,16 @@ This is an output-only resource, so `check` and `in` actions are no-ops.
 * `subject`: *Required.* Path to plain text file containing the subject
 * `body`: *Required.* Path to file containing the email body.
 * `send_empty_body`: *Optional.* If true, send the email even if the body is empty (defaults to `false`).
+* `to`: *Required.* Recipients list
+* `cc`: *Optional.* Recipients list
+* `bcc`: *Optional.* Recipients list
+Note that `to`, `cc` and `bcc` are arrays
 
 For example, a build plan might contain this:
 ```yaml
   - put: send-an-email
     params:
+      to: [ "dev-team@example.com", "product@example.net" ]
       subject: demo-prep-sha-email/generated-subject
       body: demo-prep-sha-email/generated-body
 ```

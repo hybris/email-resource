@@ -31,14 +31,16 @@ var _ = Describe("Out", func() {
 				Username string `json:"username"`
 				Password string `json:"password"`
 			} `json:"smtp"`
-			To   []string `json:"to"`
-			From string   `json:"from"`
+			From string `json:"from"`
 		} `json:"source"`
 		Params struct {
-			Subject       string `json:"subject"`
-			Body          string `json:"body"`
-			SendEmptyBody bool   `json:"send_empty_body"`
-			Headers       string `json:"headers"`
+			Subject       string   `json:"subject"`
+			Body          string   `json:"body"`
+			SendEmptyBody bool     `json:"send_empty_body"`
+			Headers       string   `json:"headers"`
+			To            []string `json:"to"`
+			Cc            []string `json:"cc"`
+			Bcc           []string `json:"bcc"`
 		} `json:"params"`
 	}
 
@@ -65,7 +67,6 @@ var _ = Describe("Out", func() {
 		inputs.Source.SMTP.Host = smtpServer.Host
 		inputs.Source.SMTP.Port = smtpServer.Port
 
-		inputs.Source.To = []string{"recipient@example.com", "recipient+2@example.com"}
 		inputs.Source.From = "sender@example.com"
 
 		sourceRoot, err = ioutil.TempDir("", "sources")
@@ -73,6 +74,7 @@ var _ = Describe("Out", func() {
 
 		inputs.Params.Subject = "some/path/to/subject.txt"
 		inputs.Params.Body = "some/other/path/to/body"
+		inputs.Params.To = []string{"recipient@example.com", "recipient+2@example.com"}
 		createSource(inputs.Params.Subject, "some subject line")
 		createSource(inputs.Params.Body, `this is a body
 it has many lines
@@ -308,14 +310,14 @@ Subject: some subject line
 
 	Context("when the 'To' is empty", func() {
 		It("should print an error and exit 1", func() {
-			inputs.Source.To = nil
+			inputs.Params.To = nil
 			inputBytes, err := json.Marshal(inputs)
 			Expect(err).NotTo(HaveOccurred())
 			inputdata = string(inputBytes)
 
 			output, err := RunWithStdinAllowError(inputdata, "../bin/out", sourceRoot)
 			Expect(err).To(MatchError("exit status 1"))
-			Expect(output).To(Equal(`missing required field "source.to"`))
+			Expect(output).To(Equal(`missing required field "Params.to"`))
 		})
 	})
 

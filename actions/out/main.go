@@ -27,13 +27,15 @@ func main() {
 				Password string
 			}
 			From string
-			To   []string
 		}
 		Params struct {
 			Subject       string
 			Body          string
 			SendEmptyBody bool `json:"send_empty_body"`
 			Headers       string
+			To            []string
+			Cc            []string
+			Bcc           []string
 		}
 	}
 
@@ -70,11 +72,6 @@ func main() {
 
 	if indata.Source.From == "" {
 		fmt.Fprintf(os.Stderr, `missing required field "source.from"`)
-		os.Exit(1)
-	}
-
-	if len(indata.Source.To) == 0 {
-		fmt.Fprintf(os.Stderr, `missing required field "source.to"`)
 		os.Exit(1)
 	}
 
@@ -118,6 +115,11 @@ func main() {
 		}
 	}
 
+	if len(indata.Params.To) == 0 {
+		fmt.Fprintf(os.Stderr, `missing required field "Params.to"`)
+		os.Exit(1)
+	}
+
 	type MetadataItem struct {
 		Name  string
 		Value string
@@ -139,7 +141,16 @@ func main() {
 	}
 
 	var messageData []byte
-	messageData = append(messageData, []byte("To: "+strings.Join(indata.Source.To, ", ")+"\n")...)
+	messageData = append(messageData, []byte("To: "+strings.Join(indata.Params.To, ", ")+"\n")...)
+
+	if len(indata.Params.Cc) > 0 {
+		messageData = append(messageData, []byte("Cc: "+strings.Join(indata.Params.Cc, ", ")+"\n")...)
+	}
+
+	if len(indata.Params.Bcc) > 0 {
+		messageData = append(messageData, []byte("Bcc: "+strings.Join(indata.Params.Bcc, ", ")+"\n")...)
+	}
+
 	if headers != "" {
 		messageData = append(messageData, []byte(headers+"\n")...)
 	}
@@ -154,6 +165,9 @@ func main() {
 		return
 	}
 
+	toList := make([]string, 0, len(indata.Params.To)+len(indata.Params.Cc)+len(indata.Params.Bcc))
+	toList = append(append(append(toList, indata.Params.To...), indata.Params.Cc...), indata.Params.Bcc...)
+
 	err = smtp.SendMail(
 		fmt.Sprintf("%s:%s", indata.Source.SMTP.Host, indata.Source.SMTP.Port),
 		smtp.PlainAuth(
@@ -163,7 +177,7 @@ func main() {
 			indata.Source.SMTP.Host,
 		),
 		indata.Source.From,
-		indata.Source.To,
+		toList,
 		messageData,
 	)
 	if err != nil {

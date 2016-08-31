@@ -1,4 +1,4 @@
-FROM progrium/busybox
+FROM alpine:3.4
 
-ADD ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN	apk add --update ca-certificates bash && rm -rf /var/cache/apk/*
 ADD bin /opt/resource
